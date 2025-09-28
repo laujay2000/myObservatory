@@ -1,0 +1,7 @@
+-
+  name: get_forecast
+  url: /locspc/data/ocf_data/v3/HKO.json
+  headers:
+    Content-Type: application/json
+  response:
+    code: 200
