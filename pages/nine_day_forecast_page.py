@@ -1,88 +1,104 @@
-from appium.webdriver.webdriver import WebDriver
 from appium.webdriver.common.appiumby import AppiumBy
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from locators.nine_day_forecast_locators import NineDayForecastLocators
-import time
+from pages.base_page import BasePage
+import re
 
 
-class NineDayForecastPage:
-    def __init__(self, driver: WebDriver):
-        self.driver = driver
-        self.locators = NineDayForecastLocators
+class ForecastPage(BasePage):
+    # 元素定位器
+    # 第9天天气预报的通用定位器（假设的ID和XPath，需根据实际应用调整）
+    DAY_9_CONTAINER = (AppiumBy.XPATH, "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]")
+    DAY_9_DATE = (AppiumBy.XPATH,
+                  "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/date']")
+    DAY_9_WEATHER = (AppiumBy.XPATH,
+                     "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/weather_condition']")
+    DAY_9_TEMP = (AppiumBy.XPATH,
+                  "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/temperature']")
+    DAY_9_HUMIDITY = (AppiumBy.XPATH,
+                      "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/humidity']")
+    DAY_9_WIND = (AppiumBy.XPATH,
+                  "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/wind']")
+    DAY_9_UV_INDEX = (AppiumBy.XPATH,
+                      "//*[@resource-id='gov.hko.weather:id/forecast_days']/android.view.ViewGroup[9]//*[@resource-id='gov.hko.weather:id/uv_index']")
 
-    def navigate_to_nine_day_forecast(self):
-        """navigate to nine day forcast page"""
-        try:
-            # open menu
-            menu_btn = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable(self.locators.MENU_BUTTON)
-            )
-            menu_btn.click()
+    # 切换摄氏度/华氏度的按钮
+    TEMP_UNIT_SWITCH = (AppiumBy.ID, "gov.hko.weather:id/temp_unit_switch")
 
-            # select option of nine forecast
-            forecast_option = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable(self.locators.NINE_DAY_FORECAST_OPTION)
-            )
-            forecast_option.click()
+    # 刷新按钮
+    REFRESH_BUTTON = (AppiumBy.ID, "gov.hko.weather:id/refresh_button")
 
-            # wait for page loading
-            WebDriverWait(self.driver, 15).until(
-                EC.presence_of_element_located(self.locators.FORECAST_TITLE)
-            )
-            return True
-        except Exception as e:
-            print(f"failed to navigate to nine day forecast: {e}")
-            return False
+    # 语言切换按钮
+    LANGUAGE_SWITCH = (AppiumBy.ID, "gov.hko.weather:id/language_switch")
 
-    def get_ninth_day_forecast(self):
-        """get the ninth day forecast"""
-        try:
-            # scroll to ninth day forecast
-            self._scroll_to_ninth_day()
+    def __init__(self, driver):
+        super().__init__(driver)
 
-            # get the ninth day forecast
-            ninth_day = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located(self.locators.DAY_9_CARD)
-            )
+    def get_day_9_date(self):
+        """获取第9天的日期"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        return self.get_element_text(self.DAY_9_DATE)
 
-            # get information
-            date = ninth_day.find_element(*self.locators.DAY_DATE).text
-            weather = ninth_day.find_element(*self.locators.WEATHER_DESC).text
-            temp = ninth_day.find_element(*self.locators.TEMP_RANGE).text
-            humidity = ninth_day.find_element(*self.locators.HUMIDITY_RANGE).text
+    def get_day_9_weather_condition(self):
+        """获取第9天的天气状况"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        return self.get_element_text(self.DAY_9_WEATHER)
 
+    def get_day_9_temperature(self):
+        """获取第9天的温度"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        temp_text = self.get_element_text(self.DAY_9_TEMP)
+
+        # 提取温度数值
+        match = re.search(r'(\d+)-(\d+)', temp_text)
+        if match:
             return {
-                "date": date,
-                "weather": weather,
-                "temperature": temp,
-                "humidity": humidity
+                'min': int(match.group(1)),
+                'max': int(match.group(2)),
+                'unit': 'C' if '°C' in temp_text else 'F'
             }
-        except Exception as e:
-            print(f"failed to get the ninth day forecast: {e}")
-            return None
+        return None
 
-    def _scroll_to_ninth_day(self):
-        """scroll to the ninth day"""
-        # get all days cards
-        days = self.driver.find_elements(*self.locators.DAY_CARDS)
+    def get_day_9_humidity(self):
+        """获取第9天的湿度"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        humidity_text = self.get_element_text(self.DAY_9_HUMIDITY)
 
-        # try to scroll if days less nine
-        if len(days) < 9:
-            # get the size of screen
-            window_size = self.driver.get_window_size()
-            start_x = window_size['width'] * 0.5
-            start_y = window_size['height'] * 0.8
-            end_y = window_size['height'] * 0.2
+        # 提取湿度数值
+        match = re.search(r'(\d+)-(\d+)%', humidity_text)
+        if match:
+            return {
+                'min': int(match.group(1)),
+                'max': int(match.group(2))
+            }
+        return None
 
-            # scroll to the ninth day
-            for _ in range(5):  # retry 5 times at most
-                self.driver.swipe(start_x, start_y, start_x, end_y, 1000)
-                time.sleep(2)
-                days = self.driver.find_elements(*self.locators.DAY_CARDS)
-                if len(days) >= 9:
-                    break
+    def get_day_9_wind(self):
+        """获取第9天的风向风力"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        return self.get_element_text(self.DAY_9_WIND)
 
-    def take_screenshot(self, filename):
-        """截取屏幕截图"""
-        self.driver.save_screenshot(filename)
+    def get_day_9_uv_index(self):
+        """获取第9天的紫外线指数"""
+        self.scroll_to_element(self.DAY_9_CONTAINER)
+        uv_text = self.get_element_text(self.DAY_9_UV_INDEX)
+
+        # 提取UV指数数值
+        match = re.search(r'(\d+)', uv_text)
+        if match:
+            return int(match.group(1))
+        return None
+
+    def switch_temperature_unit(self):
+        """切换温度单位（摄氏度/华氏度）"""
+        self.click_element(self.TEMP_UNIT_SWITCH)
+
+    def refresh_forecast(self):
+        """刷新天气预报数据"""
+        self.click_element(self.REFRESH_BUTTON)
+
+    def switch_language(self):
+        """切换语言（假设切换中英文）"""
+        self.click_element(self.LANGUAGE_SWITCH)
+
+    def is_forecast_displayed(self):
+        """验证天气预报是否显示"""
+        return self.is_element_displayed(self.DAY_9_CONTAINER)

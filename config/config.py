@@ -5,11 +5,13 @@ from datetime import datetime, timedelta
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(CURRENT_DIR)
 
-
 ASSERTION_LOG = os.path.join(BASE_DIR, 'log', 'assertion.log')
 YAML_LOG = os.path.join(BASE_DIR, 'log', 'yaml_utils.log')
 API_LOG = os.path.join(BASE_DIR, 'log', 'api_request.log')
+UI_LOG = os.path.join(BASE_DIR, 'log', 'ui_test.log')
 API_YAML = os.path.join(BASE_DIR, "data", "api.yaml")
+
+
 
 TIMEOUT = 10
 PLATFORM = os.getenv('PLATFORM', 'android')  # or 'ios'

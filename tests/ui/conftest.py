@@ -1,19 +1,11 @@
 import pytest
-import logging
 from config.capabilities import get_driver
 from pages.home_page import HomePage
 from pages.nine_day_forecast_page import ForecastPage
+from config.config import UI_LOG
+from utils.logging_use import Logger
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("test_logs.log"),
-        logging.StreamHandler()
-    ]
-)
-
+logger = Logger.init_log_config(__name__, UI_LOG)
 
 @pytest.fixture(scope="module", params=["android", "ios"])
 def driver(request):
